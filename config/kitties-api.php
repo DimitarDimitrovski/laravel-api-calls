@@ -4,6 +4,8 @@ $userId = env('KITTY_API_SUB_ID', 'loremski-user');
 
 return [
     'user_id' => $userId,
+    'default_order' => env('KITTY_API_DEFAULT_ORDER', 'desc'),
+    'default_breed' => env('KITTY_API_DEFAULT_BREED', 'beng'),
     'auth' => [
         'api_key' => env('KITTY_API_KEY', '1c224d92-8b0f-4d00-9d73-72d6fef23316')
     ],
@@ -14,6 +16,7 @@ return [
         'kitty_breed_images' => env('KITTY_API_BREED_IMAGES', 'https://api.thecatapi.com/images/search?limit=4&size=med&breed_id='),
         'kitty_user_images' => env('KITTY_API_USER_IMAGES', 'https://api.thecatapi.com/v1/images?limit=30&size=small&order=desc&sub_id=' . $userId),
         'kitty_image' => env('KITTY_API_IMAGE', 'https://api.thecatapi.com/v1/images/'),
+        'kitty_images_random' => env('KITTY_API_IMAGES_RANDOM', 'https://api.thecatapi.com/v1/images/search?order=rand&limit=4'),
         'kitty_image_upload' => env('KITTY_API_IMAGE_UPLOAD', 'https://api.thecatapi.com/v1/images/upload'),
         'kitty_favourites' => env('KITTY_API_FAVOURITE', 'https://api.thecatapi.com/v1/favourites'),
         'kitty_favourite_images' => env('KITTY_API_FAVOURITE_IMAGES', 'https://api.thecatapi.com/v1/favourites?limit=30&sub_id=' . $userId),

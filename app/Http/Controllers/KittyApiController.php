@@ -24,7 +24,7 @@ class KittyApiController
 
     public function index()
     {
-        $order = 'desc';
+        $order = config('kitties-api.default_order');
 
         if(request()->has('order')) {
             $order = request('order');
@@ -59,8 +59,8 @@ class KittyApiController
             return view('error', $data);
         }
 
-        $breed = 'beng';
-        $breedImage = 'beng';
+        $breed = config('kitties-api.default_breed');
+        $breedImage = config('kitties-api.default_breed');
 
         if(request()->has('breed')) {
             $breed = request('breed');
@@ -127,8 +127,7 @@ class KittyApiController
 
     public function favourites()
     {
-        $url = config('kitties-api.endpoints.kitty_image') . 'search?order=rand&limit=4';
-        $images = $this->getApiRequests($url);
+        $images = $this->getApiRequests(config('kitties-api.endpoints.kitty_images_random'));
 
         if($images['status'] === 'error') {
             $errorMsg = $images['message'];
@@ -164,8 +163,7 @@ class KittyApiController
 
     public function votes()
     {
-        $url = config('kitties-api.endpoints.kitty_image') . 'search?order=rand&limit=4';
-        $images = $this->getApiRequests($url);
+        $images = $this->getApiRequests(config('kitties-api.endpoints.kitty_images_random'));
 
         if($images['status'] === 'error') {
             $errorMsg = $images['message'];
@@ -337,7 +335,7 @@ class KittyApiController
         return ['status' => 'success', 'data' => json_decode($response->getBody()->getContents())];
     }
 
-    private function createPaginator(Collection $collection, $total, int $perPage, int $page): LengthAwarePaginator
+    private function createPaginator(Collection $collection, int $total, int $perPage, int $page): LengthAwarePaginator
     {
         $offset = ($page * $perPage) - $perPage;
 
