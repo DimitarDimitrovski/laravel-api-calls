@@ -2,9 +2,6 @@
 @section('page-title', 'Kitty List')
 @prepend('styles')
 <style>
-    .bg-white {
-        padding: 20px;
-    }
     .characteristics {
         list-style: none;
         padding: 0;
@@ -48,11 +45,7 @@
         overflow: auto;
     }
     .kitty-container {
-        display: inline-block;
-        box-sizing: border-box;
         width: 50%;
-        float: left;
-        padding: 10px;
     }
 </style>
 @endprepend
@@ -68,57 +61,69 @@
         <div class="row">
             <div class="col-12">
                 <div class="form-group">
+                    @if($breeds['status'] === 'error')
+                        <h4>{{ $breeds['message'] }}</h4>
+                    @else
                     <label for="order">Get breed information:</label>
                     <select class="form-control" name="breed" id="breed">
-                        @foreach($kittyBreeds as $kittyBreed)
+                        @foreach($breeds['data'] as $breed)
                             <option
                                 @if(!request()->has('breed'))
-                                {{ $kittyBreed->id === 'beng' ? 'selected' : '' }}
+                                {{ $breed->id === 'beng' ? 'selected' : '' }}
                                 @else
-                                {{ request('breed') === $kittyBreed->id ? 'selected' : '' }}
+                                {{ request('breed') === $breed->id ? 'selected' : '' }}
                                 @endif
-                                value="{{ $kittyBreed->id }}">{{ $kittyBreed->name }}</option>
+                                value="{{ $breed->id }}">{{ $breed->name }}</option>
                         @endforeach
                     </select>
+                    @endif
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="col-6">
                 <div class="mt-8 bg-white dark:bg-gray-800 sm:rounded-lg">
-                    @if(is_null($kittyBreedInfo))
-                    <h2>Sorry, there is no information about this kitty breed :(</h2>
+                    @if($breedInfo['status'] === 'error')
+                        <h4>{{ $breedInfo['message'] }}</h4>
                     @else
-                    <h2>{{ $kittyBreedInfo->name }}</h2>
-                    <span class="label">Country: {{ $kittyBreedInfo->origin }}</span><span class="label">Lifespan: {{ $kittyBreedInfo->life_span }}</span>
-                    <p class="description">{{ $kittyBreedInfo->description }}</p>
-                    <i>Temperament: {{ $kittyBreedInfo->temperament }}</i>
-                    <ul class="characteristics">
-                        <li>Adaptability <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'adaptability') ? $kittyBreedInfo->adaptability : 'no' }}"></span></li>
-                        <li>Affection Level <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'affection_level') ? $kittyBreedInfo->affection_level : 'no' }}"></span></li>
-                        <li>Child Friendly <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'child_friendly') ? $kittyBreedInfo->child_friendly : 'no' }}"></span></li>
-                        <li>Cat Friendly <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'cat_friendly') ? $kittyBreedInfo->cat_friendly : 'no' }}"></span></li>
-                        <li>Dog Friendly <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'dog_friendly') ? $kittyBreedInfo->dog_friendly : 'no' }}"></span></li>
-                        <li>Energy Level <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'energy_level') ? $kittyBreedInfo->energy_level : 'no' }}"></span></li>
-                        <li>Grooming <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'grooming') ? $kittyBreedInfo->grooming : 'no' }}"></span></li>
-                        <li>Health Issues <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'health_issues') ? $kittyBreedInfo->health_issues : 'no' }}"></span></li>
-                        <li>Intelligence <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'intelligence') ? $kittyBreedInfo->intelligence : 'no' }}"></span></li>
-                        <li>Shedding Level <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'shedding_level') ? $kittyBreedInfo->shedding_level : 'no' }}"></span></li>
-                        <li>Social Needs <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'social_needs') ? $kittyBreedInfo->social_needs : 'no' }}"></span></li>
-                        <li>Stranger Friendly <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'stranger_friendly') ? $kittyBreedInfo->stranger_friendly : 'no' }}"></span></li>
-                        <li>Vocalisation <span class="rating-label rating{{ property_exists($kittyBreedInfo, 'vocalisation') ? $kittyBreedInfo->vocalisation : 'no' }}"></span></li>
-                    </ul>
+                        @if(empty($breedInfo['data']))
+                        <h2>Sorry, there is no information about this kitty breed :(</h2>
+                        @else
+                        <h2>{{ $breedInfo['data']->name }}</h2>
+                        <span class="label">Country: {{ $breedInfo['data']->origin }}</span><span class="label">Lifespan: {{ $breedInfo['data']->life_span }}</span>
+                        <p class="description">{{ $breedInfo['data']->description }}</p>
+                        <i>Temperament: {{ $breedInfo['data']->temperament }}</i>
+                        <ul class="characteristics">
+                            <li>Adaptability <span class="rating-label rating{{ property_exists($breedInfo['data'], 'adaptability') ? $breedInfo['data']->adaptability : 'no' }}"></span></li>
+                            <li>Affection Level <span class="rating-label rating{{ property_exists($breedInfo['data'], 'affection_level') ? $breedInfo['data']->affection_level : 'no' }}"></span></li>
+                            <li>Child Friendly <span class="rating-label rating{{ property_exists($breedInfo['data'], 'child_friendly') ? $breedInfo['data']->child_friendly : 'no' }}"></span></li>
+                            <li>Cat Friendly <span class="rating-label rating{{ property_exists($breedInfo['data'], 'cat_friendly') ? $breedInfo['data']->cat_friendly : 'no' }}"></span></li>
+                            <li>Dog Friendly <span class="rating-label rating{{ property_exists($breedInfo['data'], 'dog_friendly') ? $breedInfo['data']->dog_friendly : 'no' }}"></span></li>
+                            <li>Energy Level <span class="rating-label rating{{ property_exists($breedInfo['data'], 'energy_level') ? $breedInfo['data']->energy_level : 'no' }}"></span></li>
+                            <li>Grooming <span class="rating-label rating{{ property_exists($breedInfo['data'], 'grooming') ? $breedInfo['data']->grooming : 'no' }}"></span></li>
+                            <li>Health Issues <span class="rating-label rating{{ property_exists($breedInfo['data'], 'health_issues') ? $breedInfo['data']->health_issues : 'no' }}"></span></li>
+                            <li>Intelligence <span class="rating-label rating{{ property_exists($breedInfo['data'], 'intelligence') ? $breedInfo['data']->intelligence : 'no' }}"></span></li>
+                            <li>Shedding Level <span class="rating-label rating{{ property_exists($breedInfo['data'], 'shedding_level') ? $breedInfo['data']->shedding_level : 'no' }}"></span></li>
+                            <li>Social Needs <span class="rating-label rating{{ property_exists($breedInfo['data'], 'social_needs') ? $breedInfo['data']->social_needs : 'no' }}"></span></li>
+                            <li>Stranger Friendly <span class="rating-label rating{{ property_exists($breedInfo['data'], 'stranger_friendly') ? $breedInfo['data']->stranger_friendly : 'no' }}"></span></li>
+                            <li>Vocalisation <span class="rating-label rating{{ property_exists($breedInfo['data'], 'vocalisation') ? $breedInfo['data']->vocalisation : 'no' }}"></span></li>
+                        </ul>
+                        @endif
                     @endif
                 </div>
             </div>
             <div class="col-6">
+                @if($breedImages['status'] === 'error')
+                <h4>{{ $breedImages['message'] }}</h4>
+                @else
                 <div class="mt-8 bg-white dark:bg-gray-800 sm:rounded-lg kitty-grid">
-                    @foreach($kittyImages as $kittyImage)
+                    @foreach($breedImages['data'] as $breedImage)
                         <div class="kitty-container">
-                            <div style='background-image: url("{{$kittyImage->url}}"); background-position: center center; background-size: cover; height: 200px'></div>
+                            <div style='background-image: url("{{$breedImage->url}}"); background-position: center center; background-size: cover; height: 200px'></div>
                         </div>
                     @endforeach
                 </div>
+                @endif
             </div>
         </div>
     </div>

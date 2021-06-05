@@ -2,29 +2,6 @@
 @section('page-title', 'Favourite Kitties')
 @prepend('styles')
     <style>
-        .kitty-grid {
-            padding: 20px;
-        }
-        .kitty-container {
-            width: 25%;
-            display: inline-block;
-            float: left;
-            box-sizing: border-box;
-            padding: 10px;
-        }
-        #button-container {
-            margin-top: 20px;
-            text-align: center;
-            float: left;
-            width: 100%;
-        }
-        .kitty-grid, #message {
-            float: left;
-            width: 100%;
-        }
-        #message {
-            margin-top: 2rem;
-        }
         .label {
             font-size: 30px;
             position: absolute;
@@ -52,18 +29,22 @@
         </div>
         <div class="mt-8 bg-white dark:bg-gray-800 sm:rounded-lg kitty-grid new">
             <div class="new-kitties">
-                <h3>Place your votes now.</h3>
-                @foreach($kittyImages as $kittyImage)
-                    <div class="kitty-container">
-                        <div style='background-image: url("{{$kittyImage->url}}"); background-position: center center;
-                            background-size: cover; height: 200px; display: flex'>
-                            <a class="action-button vote like" href="javascript:void(0)"
-                               data-url="{{ route('kitties.image.vote', ['id' => $kittyImage->id]) }}"><i class="fa fa-thumbs-up"></i></a>
-                            <a class="action-button vote dislike" href="javascript:void(0)"
-                               data-url="{{ route('kitties.image.vote', ['id' => $kittyImage->id]) }}"><i class="fa fa-thumbs-down"></i></a>
+                @if($images['status'] === 'error')
+                    {{ $images['message'] }}
+                @else
+                    <h3>Place your votes now.</h3>
+                    @foreach($images['data'] as $image)
+                        <div class="kitty-container">
+                            <div style='background-image: url("{{$image->url}}"); background-position: center center;
+                                background-size: cover; height: 200px; display: flex'>
+                                <a class="action-button vote like" href="javascript:void(0)"
+                                   data-url="{{ route('kitties.image.vote', ['id' => $image->id]) }}"><i class="fa fa-thumbs-up"></i></a>
+                                <a class="action-button vote dislike" href="javascript:void(0)"
+                                   data-url="{{ route('kitties.image.vote', ['id' => $image->id]) }}"><i class="fa fa-thumbs-down"></i></a>
+                            </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                @endif
             </div>
         </div>
         <div id="button-container">
@@ -72,25 +53,29 @@
         <div id="message"></div>
         <div class="mt-8 bg-white dark:bg-gray-800 sm:rounded-lg kitty-grid votes">
             <div class="votes-content">
-                @if($votes === null)
-                    <h3>You have not voted yet.</h3>
+                @if($votedImages['status'] === 'error')
+                    <h4>{{ $votedImages['message'] }}</h4>
                 @else
-                    <h3>Your vote history</h3>
-                    @foreach($votes as $vote)
-                        <div class="kitty-container">
-                            <div style='background-image: url("{{ asset('assets/images/no_preview.png') }}"); background-position: center center;
-                                background-size: cover; height: 200px; display: flex; position: relative'>
-                                <span class="label"><i class="fa fa-thumbs-{{ $vote->value === 1  ? 'up' : 'down' }}"></i></span>
-                                <a class="action-button delete-item" href="javascript:void(0)"
-                                   data-type="vote"
-                                   data-url="{{ route('kitties.user.images.delete', ['id' => $vote->id]) }}"><i class="fa fa-trash"></i></a>
+                    @if(empty($votedImages['data']))
+                        <h3>You have not voted yet.</h3>
+                    @else
+                        <h3>Your vote history</h3>
+                        @foreach($votedImages['data'] as $votedImage)
+                            <div class="kitty-container">
+                                <div style='background-image: url("{{ asset('assets/images/no_preview.png') }}"); background-position: center center;
+                                    background-size: cover; height: 200px; display: flex; position: relative'>
+                                    <span class="label"><i class="fa fa-thumbs-{{ $votedImage->value === 1  ? 'up' : 'down' }}"></i></span>
+                                    <a class="action-button delete-item" href="javascript:void(0)"
+                                       data-type="vote"
+                                       data-url="{{ route('kitties.user.images.delete', ['id' => $votedImage->id]) }}"><i class="fa fa-trash"></i></a>
+                                </div>
+                                <p>Sorry, the API json response does not include image path for image with id: {{ $votedImage->image_id }}</p>
                             </div>
-                            <p>Sorry, json response does not include image path for image id: {{ $vote->image_id }}</p>
+                        @endforeach
+                        <div class="paginator" style="clear: both">
+                            {{ $votedImages['data']->links('pagination::bootstrap-4') }}
                         </div>
-                    @endforeach
-                    <div class="paginator" style="clear: both">
-                        {{ $votes->links('pagination::bootstrap-4') }}
-                    </div>
+                    @endif
                 @endif
             </div>
         </div>

@@ -18,12 +18,21 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('kitties', [KittyApiController::class, 'index'])->name('kitties');
-Route::post('kitties/{id}/add-favourite', [KittyApiController::class, 'addFavourite'])->name('kitties.image.favourite.add');
-Route::post('kitties/{id}/vote', [KittyApiController::class, 'addVote'])->name('kitties.image.vote');
-Route::get('kitties/breeds', [KittyApiController::class, 'breeds'])->name('kitties.breeds');
-Route::get('kitties/user/images', [KittyApiController::class, 'userImages'])->name('kitties.user.images');
-Route::post('kitties/user/images/upload', [KittyApiController::class, 'upload'])->name('kitties.user.images.upload');
-Route::delete('kitties/user/images/{id}', [KittyApiController::class, 'delete'])->name('kitties.user.images.delete');
-Route::get('kitties/user/favourites', [KittyApiController::class, 'favourites'])->name('kitties.user.favourites');
-Route::get('kitties/user/votes', [KittyApiController::class, 'votes'])->name('kitties.user.votes');
+Route::prefix('kitties')->name('kitties')->group(function() {
+    Route::get('', [KittyApiController::class, 'index']);
+    Route::post('{id}/add-favourite', [KittyApiController::class, 'addFavourite'])->name('.image.favourite.add');
+    Route::post('{id}/vote', [KittyApiController::class, 'addVote'])->name('.image.vote');
+    Route::get('breeds', [KittyApiController::class, 'breeds'])->name('.breeds');
+
+    Route::prefix('user')->name('.user')->group(function() {
+        Route::get('favourites', [KittyApiController::class, 'favourites'])->name('.favourites');
+        Route::get('votes', [KittyApiController::class, 'votes'])->name('.votes');
+
+        Route::prefix('images')->name('.images')->group(function() {
+            Route::get('', [KittyApiController::class, 'userImages']);
+            Route::post('upload', [KittyApiController::class, 'upload'])->name('.upload');
+            Route::delete('{id}', [KittyApiController::class, 'delete'])->name('.delete');
+        });
+    });
+});
+

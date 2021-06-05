@@ -1,39 +1,5 @@
 @extends('master')
 @section('page-title', 'Kitty List')
-@prepend('styles')
-<style>
-    .kitty-grid {
-        padding: 20px;
-    }
-    .kitty-container {
-        width: 25%;
-        display: inline-block;
-        float: left;
-        box-sizing: border-box;
-        padding: 10px;
-    }
-    .paginator {
-        text-align: center;
-    }
-    .paginator .item.active {
-        font-weight: 600;
-        color: darkturquoise;
-    }
-    nav li {
-        list-style: none;
-        display: inline-block;
-    }
-    nav li a.active {
-        color: turquoise;
-    }
-    .page-heading {
-        clear: both;
-    }
-    .pagination {
-        display: block;
-    }
-</style>
-@endprepend
 @section('content')
     <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
         <div class="flex justify-center pt-8 sm:justify-start sm:pt-0">
@@ -44,6 +10,9 @@
                 <p>When sorting by order, a get request is sent to thecatapi.com with coresponding data</p>
             </div>
         </div>
+        @if($kitties['status'] === 'error')
+            <h3>{{ $kitties['message'] }}</h3>
+        @else
         <div class="row">
             <div class="col-12">
                 <div class="form-group">
@@ -57,15 +26,16 @@
             </div>
         </div>
         <div class="mt-8 bg-white dark:bg-gray-800 sm:rounded-lg kitty-grid">
-            @foreach($kitties as $kitty)
+            @foreach($kitties['data'] as $kitty)
                 <div class="kitty-container">
                     <div style='background-image: url("{{$kitty->url}}"); background-position: center center; background-size: cover; height: 200px'></div>
                 </div>
             @endforeach
             <div class="paginator" style="clear: both">
-                {{ $kitties->links('pagination::bootstrap-4') }}
+                {{ $kitties['data']->links('pagination::bootstrap-4') }}
             </div>
         </div>
+        @endif
     </div>
 @endsection
 @prepend('scripts')

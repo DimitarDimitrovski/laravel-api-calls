@@ -3,8 +3,7 @@
 
 namespace App\Http\Controllers;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
+use App\Http\Modules\API\CallerInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -13,36 +12,25 @@ use Illuminate\Support\Collection;
 class KittyApiController
 {
     /**
-     * @var Client
+     * @var CallerInterface
      */
-    private $client;
+    private $caller;
 
-    public function __construct(Client $client)
+    public function __construct(CallerInterface $caller)
     {
-        $this->client = $client;
+        $this->caller = $caller;
     }
 
     public function index()
     {
-        $order = config('kitties-api.default_order');
+        $order = request('order', config('kitties-api.default_order'));
+        $kitties = $this->caller->getApiRequest($this->caller->getEndPoint('all'), $order);
 
-        if(request()->has('order')) {
-            $order = request('order');
+        if($kitties['status'] === 'success') {
+            $page = request()->has('page') ? request('page') : 1;
+            $kitties['data'] = $this->createPaginator(collect($kitties['data']), count($kitties['data']), 8, $page);
         }
 
-        $url = config('kitties-api.endpoints.kitties_list') . $order;
-        $kittyListData = $this->getApiRequests($url);
-
-        if($kittyListData['status'] === 'error') {
-            $errorMsg = $kittyListData['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $kittyRecords = collect($kittyListData['data']);
-        $page = request()->has('page') ? request('page') : 1;
-        $kitties = $this->createPaginator($kittyRecords, count($kittyRecords), 8, $page);
         $data = compact('kitties');
 
         return view('kitties.index', $data);
@@ -50,148 +38,60 @@ class KittyApiController
 
     public function breeds()
     {
-        $breeds = $this->getApiRequests(config('kitties-api.endpoints.kitty_breeds'));
+        $breeds = $this->caller->getApiRequest($this->caller->getEndPoint('breeds'));
+        $breedSelected = request('breed', config('kitties-api.default_breed'));
+        $breedImages = $this->caller->getApiRequest($this->caller->getEndPoint('breed-images'), $breedSelected);
+        $breedInfo = $this->caller->getApiRequest($this->caller->getEndPoint('breed-search'), $breedSelected);
 
-        if($breeds['status'] === 'error') {
-            $errorMsg = $breeds['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
+        if($breedInfo['status'] === 'success' && !empty($breedInfo['data'])) {
+            $breedInfo['data'] = $breedInfo['data'][0];
         }
 
-        $breed = config('kitties-api.default_breed');
-        $breedImage = config('kitties-api.default_breed');
-
-        if(request()->has('breed')) {
-            $breed = request('breed');
-            $breedImage = request('breed');
-        }
-
-        $breedUrl = config('kitties-api.endpoints.kitty_breed_search') . $breed;
-        $selectedBreed = $this->getApiRequests($breedUrl);
-
-        if($selectedBreed['status'] === 'error') {
-            $errorMsg = $selectedBreed['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $breedImageUrl = config('kitties-api.endpoints.kitty_breed_images') . $breedImage;
-        $breedImages = $this->getApiRequests($breedImageUrl);
-
-        if($breedImages['status'] === 'error') {
-            $errorMsg = $breedImages['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $kittyBreeds = $breeds['data'];
-        $kittyBreedInfo = null;
-
-        if(count($selectedBreed['data']) > 0) {
-            $kittyBreedInfo = $selectedBreed['data'][0];
-        }
-
-        $kittyImages = $breedImages['data'];
-        $data = compact('kittyBreeds', 'kittyBreedInfo', 'kittyImages');
+        $data = compact('breeds', 'breedInfo', 'breedImages');
 
         return view('kitties.breeds', $data);
     }
 
     public function userImages()
     {
-        $userId = config('kitties-api.user_id');
-        $images = $this->getApiRequests(config('kitties-api.endpoints.kitty_user_images'));
+        $images = $this->caller->getApiRequest($this->caller->getEndPoint('user-images'), config('kitties-api.user_id'));
 
-        if($images['status'] === 'error') {
-            $errorMsg = $images['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $userImages = null;
-
-        if(count($images['data']) > 0) {
-            $userImageRecords = collect($images['data']);
+        if($images['status'] === 'success' && count($images['data']) > 0) {
             $page = request()->has('page') ? request('page') : 1;
-            $userImages = $this->createPaginator($userImageRecords, count($userImageRecords), 4, $page);
+            $images['data'] = $this->createPaginator(collect($images['data']), count($images['data']), 4, $page);
         }
 
-        $data = compact('userId', 'userImages');
+        $data = compact('images');
 
         return view('kitties.user-images', $data);
     }
 
     public function favourites()
     {
-        $images = $this->getApiRequests(config('kitties-api.endpoints.kitty_images_random'));
+        $images = $this->caller->getApiRequest($this->caller->getEndPoint('random'));
+        $favouriteImages = $this->caller->getApiRequest($this->caller->getEndPoint('favourites'));
 
-        if($images['status'] === 'error') {
-            $errorMsg = $images['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $kittyImages = $images['data'];
-
-        $favouritesUrl = config('kitties-api.endpoints.kitty_favourite_images');
-        $favouriteImages = $this->getApiRequests($favouritesUrl);
-
-        if($favouriteImages['status'] === 'error') {
-            $errorMsg = $favouriteImages['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $favourites = null;
-
-        if(count($favouriteImages['data']) > 0) {
-            $favouriteImageRecords = collect($favouriteImages['data']);
+        if($favouriteImages['status'] === 'success' && count($favouriteImages['data']) > 0) {
             $page = request()->has('page') ? request('page') : 1;
-            $favourites = $this->createPaginator($favouriteImageRecords, count($favouriteImageRecords), 8, $page);
+            $favouriteImages['data'] = $this->createPaginator(collect($favouriteImages['data']), count($favouriteImages['data']), 8, $page);
         }
 
-        $data = compact('kittyImages', 'favourites');
+        $data = compact('images', 'favouriteImages');
 
         return view('kitties.user-favourites', $data);
     }
 
     public function votes()
     {
-        $images = $this->getApiRequests(config('kitties-api.endpoints.kitty_images_random'));
+        $images = $this->caller->getApiRequest($this->caller->getEndPoint('random'));
+        $votedImages = $this->caller->getApiRequest($this->caller->getEndPoint('user-votes'));
 
-        if($images['status'] === 'error') {
-            $errorMsg = $images['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $kittyImages = $images['data'];
-
-        $votedImages = $this->getApiRequests(config('kitties-api.endpoints.kitty_user_votes'));
-
-        if($votedImages['status'] === 'error') {
-            $errorMsg = $votedImages['message'];
-            $data = compact('errorMsg');
-
-            return view('error', $data);
-        }
-
-        $votes = null;
-
-        if(count($votedImages['data']) > 0) {
-            $favouriteImageRecords = collect($votedImages['data']);
+        if($votedImages['status'] === 'success' && count($votedImages['data']) > 0) {
             $page = request()->has('page') ? request('page') : 1;
-            $votes = $this->createPaginator($favouriteImageRecords, count($favouriteImageRecords), 8, $page);
+            $votedImages['data'] = $this->createPaginator(collect($votedImages['data']), count($votedImages['data']), 8, $page);
         }
 
-        $data = compact('kittyImages', 'votes');
+        $data = compact('images', 'votedImages');
 
         return view('kitties.votes', $data);
     }
@@ -200,43 +100,30 @@ class KittyApiController
     {
         $file = $request->file;
         $image_path = $file->getPathname();
+        $body = [
+            [
+                'name' => 'file',
+                'contents' => fopen($image_path, 'r'),
+                'filename' => $file->getClientOriginalName()
+            ],
+            [
+                'name' => 'sub_id',
+                'contents' => config('kitties-api.user_id')
+            ]
+        ];
 
-        try {
-            $response = $this->client->post(config('kitties-api.endpoints.kitty_image_upload'),
-                [
-                    'multipart' => [
-                        [
-                            'name' => 'file',
-                            'contents' => fopen($image_path, 'r'),
-                            'filename' => $file->getClientOriginalName()
-                        ],
-                        [
-                            'name' => 'sub_id',
-                            'contents' => config('kitties-api.user_id')
-                        ]
-                    ],
-                    'headers' => [
-                        'x-api-key' => config('kitties-api.auth.api_key'),
-                    ]
-                ],
-            );
-        } catch(RequestException $exception) {
-            if($exception->hasResponse()) {
-                $data = json_decode($exception->getResponse()->getBody()->getContents());
-                $errorMsg = $data->message;
 
-                return response()->json(['status' => 'error', 'message' => $errorMsg]);
-            }
+        $postData = $this->caller->post($this->caller->getEndPoint('image-upload'), 'multipart', $body);
+
+        if($postData['status'] === 'error') {
+            return response()->json(['status' => 'error', 'message' => $postData['message']]);
         }
 
-        $dataUpload = json_decode($response->getBody()->getContents());
-        $analysisUrl = config('kitties-api.endpoints.kitty_image') . $dataUpload->id . '/analysis';
-        $analysis = $this->getApiRequests($analysisUrl);
+        $analysisUrl = config('kitties-api.endpoints.kitty_image') . $postData['data']->id . '/analysis';
+        $analysis = $this->caller->getApiRequest($analysisUrl);
 
         if($analysis['status'] === 'error') {
-            $errorMsg = $analysis['message'];
-
-            return response()->json(['status' => 'error', 'message' => $errorMsg]);
+            return response()->json(['status' => 'error', 'message' => $analysis['message']]);
         }
 
         return response()->json(['status' => $analysis['status'], 'message' => 'Image was successfully uploaded and approved.']);
@@ -244,23 +131,15 @@ class KittyApiController
 
     public function addFavourite($id): JsonResponse
     {
-        try {
-            $this->client->post(config('kitties-api.endpoints.kitty_favourites'), [
-                'headers' => [
-                    'x-api-key' => config('kitties-api.auth.api_key')
-                ],
-                'json' => [
-                    'image_id' => $id,
-                    'sub_id' => config('kitties-api.user_id')
-                ]
-            ]);
-        } catch (RequestException $exception) {
-            if($exception->hasResponse()) {
-                $data = json_decode($exception->getResponse()->getBody()->getContents());
-                $errorMsg = $data->message;
+        $body = [
+            'image_id' => $id,
+            'sub_id' => config('kitties-api.user_id')
+        ];
 
-                return response()->json(['status' => 'error', 'message' => $errorMsg]);
-            }
+        $postResponse = $this->caller->post($this->caller->getEndPoint('favourites-action'), 'json', $body);
+
+        if($postResponse['status'] === 'error') {
+            return response()->json(['status' => 'error', 'message' => $postResponse['message']]);
         }
 
         return response()->json(['status' => 'success', 'message' => 'Image was successfully added to your favourites']);
@@ -268,24 +147,16 @@ class KittyApiController
 
     public function addVote($id, Request $request): JsonResponse
     {
-        try {
-            $this->client->post(config('kitties-api.endpoints.kitty_image_vote'), [
-                'headers' => [
-                    'x-api-key' => config('kitties-api.auth.api_key')
-                ],
-                'json' => [
-                    'image_id' => $id,
-                    'sub_id' => config('kitties-api.user_id'),
-                    'value' => $request->vote
-                ]
-            ]);
-        } catch (RequestException $exception) {
-            if($exception->hasResponse()) {
-                $data = json_decode($exception->getResponse()->getBody()->getContents());
-                $errorMsg = $data->message;
+        $body = [
+            'image_id' => $id,
+            'sub_id' => config('kitties-api.user_id'),
+            'value' => $request->vote
+        ];
 
-                return response()->json(['status' => 'error', 'message' => $errorMsg]);
-            }
+        $postResponse = $this->caller->post($this->caller->getEndPoint('vote-actions'), 'json', $body);
+
+        if($postResponse['status'] === 'error') {
+            return response()->json(['status' => 'error', 'message' => $postResponse['message']]);
         }
 
         return response()->json(['status' => 'success', 'message' => 'Image was successfully added to your votes']);
@@ -293,46 +164,23 @@ class KittyApiController
 
     public function delete($id, Request $request): JsonResponse
     {
-        $url = config('kitties-api.endpoints.kitty_image') . $id;
+        $url = $this->caller->getEndPoint('delete-image', $id);
 
         if($request->type === 'favourite') {
-            $url = config('kitties-api.endpoints.kitty_favourites') . $id;
+            $url = $this->caller->getEndPoint('favourites-action', $id);
         }
 
         if($request->type === 'vote') {
-            $url = config('kitties-api.endpoints.kitty_image_vote') . $id;
+            $url = $this->caller->getEndPoint('vote-actions', $id);
         }
 
-        try {
-            $this->client->delete($url,
-                ['headers' => ['x-api-key' => config('kitties-api.auth.api_key')]]);
-        } catch (RequestException $exception) {
-            if($exception->hasResponse()) {
-                $data = json_decode($exception->getResponse()->getBody()->getContents());
-                $errorMsg = $data->message;
+        $response = $this->caller->delete($url);
 
-                return response()->json(['status' => 'error', 'message' => $errorMsg]);
-            }
+        if($response['status'] === 'error') {
+            return response()->json(['status' => 'error', 'message' => $response['message']]);
         }
 
         return response()->json(['status' => 'success', 'message' => 'Image was deleted successfully']);
-    }
-
-    private function getApiRequests(string $url): array
-    {
-        try {
-            $response = $this->client->get($url,
-                ['headers' => ['x-api-key' => config('kitties-api.auth.api_key')]]);
-        } catch(RequestException $exception) {
-            if($exception->hasResponse()) {
-                $data = json_decode($exception->getResponse()->getBody()->getContents());
-                $errorMsg = $data->message;
-
-                return ['status' => 'error', 'message' => $errorMsg];
-            }
-        }
-
-        return ['status' => 'success', 'data' => json_decode($response->getBody()->getContents())];
     }
 
     private function createPaginator(Collection $collection, int $total, int $perPage, int $page): LengthAwarePaginator
