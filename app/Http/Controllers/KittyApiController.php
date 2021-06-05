@@ -23,8 +23,7 @@ class KittyApiController
 
     public function index()
     {
-        $order = request('order', config('kitties-api.default_order'));
-        $kitties = $this->caller->getApiRequest($this->caller->getEndPoint('all'), $order);
+        $kitties = $this->caller->getApiRequest($this->caller->getEndPoint('all'), request('order', config('kitties-api.default_order')));
 
         if($kitties['status'] === 'success') {
             $page = request()->has('page') ? request('page') : 1;
@@ -111,7 +110,6 @@ class KittyApiController
                 'contents' => config('kitties-api.user_id')
             ]
         ];
-
 
         $postData = $this->caller->post($this->caller->getEndPoint('image-upload'), 'multipart', $body);
 
