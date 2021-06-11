@@ -3,7 +3,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Modules\API\CallerInterface;
+use App\Modules\API\CallerInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;

@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Http\Modules\API\CallerInterface;
-use App\Http\Modules\API\ClientCallerImpl;
+use App\Modules\API\CallerInterface;
+use App\Modules\API\ClientCallerImpl;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider

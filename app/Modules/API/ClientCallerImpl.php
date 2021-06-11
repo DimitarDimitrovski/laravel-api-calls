@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Http\Modules\API;
+namespace App\Modules\API;
 
 
 use GuzzleHttp\Client;
